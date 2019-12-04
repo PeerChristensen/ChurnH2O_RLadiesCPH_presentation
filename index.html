@@ -381,14 +381,14 @@ h2o.init(nthreads = -1)
 ##  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         1 hours 41 minutes 
+##     H2O cluster uptime:         1 hours 56 minutes 
 ##     H2O cluster timezone:       Europe/Paris 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.26.0.2 
 ##     H2O cluster version age:    4 months and 7 days !!! 
 ##     H2O cluster name:           H2O_started_from_R_pech_twl513 
 ##     H2O cluster total nodes:    1 
-##     H2O cluster total memory:   1.50 GB 
+##     H2O cluster total memory:   1.62 GB 
 ##     H2O cluster total cores:    4 
 ##     H2O cluster allowed cores:  4 
 ##     H2O cluster healthy:        TRUE 
@@ -447,7 +447,7 @@ aml@leaderboard %&gt;%
 ## # A tibble: 1 x 2
 ##   model_id                                    auc
 ##   &lt;chr&gt;                                     &lt;dbl&gt;
-## 1 GLM_grid_1_AutoML_20191204_125652_model_1 0.906
+## 1 GLM_grid_1_AutoML_20191204_131121_model_1 0.891
 ```
 
 ---
@@ -473,7 +473,9 @@ model_path &lt;- glue::glue("models/{list.files('models', pattern = 'best')}")
 
 mod &lt;- h2o.loadModel(model_path)
 ```
+
 ---
+
 ..Or if you want lo load and compare multiple models ordered by their positions in the leaderboard, you can do it this way. (see "compare_models.R")
 
 
@@ -510,43 +512,53 @@ class: inverse, center, middle
 
 ```r
 perf &lt;- h2o.performance(mod,test_hf)
-perf
+
+perf@metrics$pr_auc
 ```
 
 ```
-## H2OBinomialMetrics: glm
-## 
-## MSE:  0.0336716
-## RMSE:  0.1834982
-## LogLoss:  0.1283486
-## Mean Per-Class Error:  0.1846539
-## AUC:  0.9148011
-## pr_auc:  0.613858
-## Gini:  0.8296023
-## R^2:  0.3546452
-## Residual Deviance:  2114.928
-## AIC:  2278.928
-## 
-## Confusion Matrix (vertical: actual; across: predicted) for F1-optimal threshold:
-##           0   1    Error       Rate
-## 0      7561 223 0.028649  =223/7784
-## 1       155 300 0.340659   =155/455
-## Totals 7716 523 0.045879  =378/8239
-## 
+## [1] 0.556672
+```
+
+```r
+perf@metrics$max_criteria_and_metric_scores
+```
+
+```
 ## Maximum Metrics: Maximum metrics at their respective thresholds
 ##                         metric threshold    value idx
-## 1                       max f1  0.217989 0.613497 156
-## 2                       max f2  0.131741 0.657790 196
-## 3                 max f0point5  0.380994 0.678145  85
-## 4                 max accuracy  0.344213 0.962495 102
-## 5                max precision  0.766328 1.000000   0
-## 6                   max recall  0.008369 1.000000 379
-## 7              max specificity  0.766328 1.000000   0
-## 8             max absolute_mcc  0.217989 0.590850 156
-## 9   max min_per_class_accuracy  0.060698 0.828571 260
-## 10 max mean_per_class_accuracy  0.083776 0.843918 231
-## 
-## Gains/Lift Table: Extract with `h2o.gainsLift(&lt;model&gt;, &lt;data&gt;)` or `h2o.gainsLift(&lt;model&gt;, valid=&lt;T/F&gt;, xval=&lt;T/F&gt;)`
+## 1                       max f1  0.150414 0.572067 106
+## 2                       max f2  0.114831 0.607812 141
+## 3                 max f0point5  0.203337 0.616771  69
+## 4                 max accuracy  0.212438 0.958005  62
+## 5                max precision  0.409623 1.000000   0
+## 6                   max recall  0.015166 1.000000 366
+## 7              max specificity  0.409623 1.000000   0
+## 8             max absolute_mcc  0.150414 0.547582 106
+## 9   max min_per_class_accuracy  0.078554 0.824176 196
+## 10 max mean_per_class_accuracy  0.086660 0.834274 182
+```
+
+---
+
+
+```r
+perf@metrics$max_criteria_and_metric_scores
+```
+
+```
+## Maximum Metrics: Maximum metrics at their respective thresholds
+##                         metric threshold    value idx
+## 1                       max f1  0.150414 0.572067 106
+## 2                       max f2  0.114831 0.607812 141
+## 3                 max f0point5  0.203337 0.616771  69
+## 4                 max accuracy  0.212438 0.958005  62
+## 5                max precision  0.409623 1.000000   0
+## 6                   max recall  0.015166 1.000000 366
+## 7              max specificity  0.409623 1.000000   0
+## 8             max absolute_mcc  0.150414 0.547582 106
+## 9   max min_per_class_accuracy  0.078554 0.824176 196
+## 10 max mean_per_class_accuracy  0.086660 0.834274 182
 ```
 
 ---
@@ -566,7 +578,7 @@ metrics %&gt;%
   theme_minimal()
 ```
 
-![](index_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -580,7 +592,7 @@ metrics %&gt;%
   theme_minimal()
 ```
 
-![](index_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -592,11 +604,11 @@ h2o.confusionMatrix(perf,metrics = "f2")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.131741420722174:
+## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.114830568119997:
 ##           0   1    Error       Rate
-## 0      7419 365 0.046891  =365/7784
-## 1       124 331 0.272527   =124/455
-## Totals 7543 696 0.059352  =489/8239
+## 0      7400 384 0.049332  =384/7784
+## 1       150 305 0.329670   =150/455
+## Totals 7550 689 0.064814  =534/8239
 ```
 
 ```r
@@ -604,11 +616,11 @@ h2o.confusionMatrix(perf,metrics = "accuracy")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.344213264721167:
+## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.212437697937338:
 ##           0   1    Error       Rate
-## 0      7703  81 0.010406   =81/7784
-## 1       228 227 0.501099   =228/455
-## Totals 7931 308 0.037505  =309/8239
+## 0      7733  51 0.006552   =51/7784
+## 1       295 160 0.648352   =295/455
+## Totals 8028 211 0.041995  =346/8239
 ```
 
 ---
@@ -640,7 +652,7 @@ plot_input &lt;- plotting_scope(prepared_input = scores_and_ntiles)
 plot_cumgains(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -651,7 +663,7 @@ plot_cumgains(data = plot_input)
 plot_cumlift(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -661,7 +673,7 @@ plot_cumlift(data = plot_input)
 plot_cumresponse(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -678,13 +690,13 @@ class: inverse, center, middle
 h2o.varimp_plot(mod)
 ```
 
-![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-36-1.png)&lt;!-- --&gt;
 
 (See the "EVALUATE.R script for how to plot a decision tree from the model)
 
 ---
 
-### Local explanations
+### Local explanations with LIME
 
 
 ```r
@@ -707,7 +719,7 @@ explanation &lt;- lime::explain(x = test_data[1:5, ],
 lime::plot_features(explanation)
 ```
 
-![](index_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-38-1.png)&lt;!-- --&gt;
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
