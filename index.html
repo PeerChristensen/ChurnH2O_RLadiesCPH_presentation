@@ -7,7 +7,6 @@
     <meta name="date" content="2019-12-05" />
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
-    <script src="libs/kePrint-0.0.1/kePrint.js"></script>
   </head>
   <body>
     <textarea id="source">
@@ -27,11 +26,6 @@ class: inverse, center, middle
 # EDA
 
 ---
-
-
-```r
-library(tidyverse)
-```
 
 
 
@@ -109,6 +103,7 @@ names(df[1:50])
 
 
 ```r
+library(tidyverse)
 library(correlationfunnel)
 
 df_binned &lt;- df %&gt;%
@@ -127,7 +122,7 @@ df_churn_corr %&gt;%
   plot_correlation_funnel()
 ```
 
-![](index_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -139,7 +134,7 @@ df_churn_corr %&gt;%
   plot_correlation_funnel()
 ```
 
-![](index_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -193,7 +188,7 @@ p1 &lt;- df %&gt;%
 p1
 ```
 
-![](index_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -223,7 +218,7 @@ p2 &lt;- df %&gt;%
 p2
 ```
 
-![](index_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -253,7 +248,7 @@ today &lt;- max(as.Date(df$DateStatus))
 DateLatestSignup &lt;- today - days(df$DaysSinceLatestSignup)
 
 # Find the signup month
-df$DateLatestSignup_month &lt;- month(DateLatestSignup)
+df$DateLatestSignup_month &lt;- lubridate::month(DateLatestSignup)
 
 df &lt;- df %&gt;% select(-DateStatus)
 ```
@@ -383,25 +378,17 @@ h2o.init(nthreads = -1)
 ```
 
 ```
-## 
-## H2O is not running yet, starting it now...
-## 
-## Note:  In case of errors look at the following log files:
-##     C:\Users\pech\AppData\Local\Temp\RtmpUFSdde/h2o_pech_started_from_r.out
-##     C:\Users\pech\AppData\Local\Temp\RtmpUFSdde/h2o_pech_started_from_r.err
-## 
-## 
-## Starting H2O JVM and connecting: . Connection successful!
+##  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         2 seconds 997 milliseconds 
+##     H2O cluster uptime:         1 hours 41 minutes 
 ##     H2O cluster timezone:       Europe/Paris 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.26.0.2 
-##     H2O cluster version age:    4 months and 6 days !!! 
-##     H2O cluster name:           H2O_started_from_R_pech_cda172 
+##     H2O cluster version age:    4 months and 7 days !!! 
+##     H2O cluster name:           H2O_started_from_R_pech_twl513 
 ##     H2O cluster total nodes:    1 
-##     H2O cluster total memory:   1.75 GB 
+##     H2O cluster total memory:   1.50 GB 
 ##     H2O cluster total cores:    4 
 ##     H2O cluster allowed cores:  4 
 ##     H2O cluster healthy:        TRUE 
@@ -419,6 +406,8 @@ h2o.no_progress()
 
 ---
 
+### Creating H2O frames
+
 
 ```r
 train_hf &lt;- as.h2o(train_data)
@@ -431,7 +420,7 @@ train_hf[, response] &lt;- as.factor(train_hf[, response])
 test_hf[, response]  &lt;- as.factor(test_hf[, response])
 ```
 
----
+### Model training with AutoML
 
 
 
@@ -449,49 +438,276 @@ aml &lt;- h2o.automl(x = features,
 
 
 ```r
-library(knitr)
-library(kableExtra)
-
-
-aml@leaderboard %&gt;% 
+aml@leaderboard %&gt;%
   as_tibble() %&gt;%
-  kable() %&gt;% 
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+  select(model_id, auc)
 ```
 
-&lt;table class="table table-striped table-hover table-condensed table-responsive" style="margin-left: auto; margin-right: auto;"&gt;
- &lt;thead&gt;
-  &lt;tr&gt;
-   &lt;th style="text-align:left;"&gt; model_id &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; auc &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; logloss &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; mean_per_class_error &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; rmse &lt;/th&gt;
-   &lt;th style="text-align:right;"&gt; mse &lt;/th&gt;
-  &lt;/tr&gt;
- &lt;/thead&gt;
-&lt;tbody&gt;
-  &lt;tr&gt;
-   &lt;td style="text-align:left;"&gt; GLM_grid_1_AutoML_20191203_180030_model_1 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 0.8996386 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 0.1500313 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 0.2341224 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 0.2002893 &lt;/td&gt;
-   &lt;td style="text-align:right;"&gt; 0.0401158 &lt;/td&gt;
-  &lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
+```
+## # A tibble: 1 x 2
+##   model_id                                    auc
+##   &lt;chr&gt;                                     &lt;dbl&gt;
+## 1 GLM_grid_1_AutoML_20191204_125652_model_1 0.906
+```
+
+---
 
 ### Save all models
 
 
 ```r
-# for (i in 1:nrow(aml@leaderboard)) {
-#   
-#   aml_model = h2o.getModel(aml@leaderboard[i, 1])
-#   h2o.saveModel(object = aml_model, "models10")
-# }
+for (i in 1:nrow(aml@leaderboard)) {
+
+  aml_model = h2o.getModel(aml@leaderboard[i, 1])
+  h2o.saveModel(object = aml_model, "models")
+}
 ```
+
+### Load models
+
+If you add the suffix "best" to the filename of the best model, you can load the best model in this way.
+
+
+```r
+model_path &lt;- glue::glue("models/{list.files('models', pattern = 'best')}")
+
+mod &lt;- h2o.loadModel(model_path)
+```
+---
+..Or if you want lo load and compare multiple models ordered by their positions in the leaderboard, you can do it this way. (see "compare_models.R")
+
+
+```r
+#list files
+files &lt;- file.info(dir(path = "models", full.names = TRUE), extra_cols = FALSE)
+
+# order by the time of creation
+files_ordered &lt;- files[with(files, order(as.POSIXct(mtime))), ]
+
+# filenames
+file_names &lt;- rownames(files_ordered)
+
+models &lt;- list()
+
+for (i in files[1:5]) {
+  
+  mod &lt;- h2o.loadModel(i)
+  
+  models[i] = mod
+}
+```
+
+---
+
+class: inverse, center, middle
+
+# Evaluating our model
+
+---
+
+### H2O performance objects
+
+
+```r
+perf &lt;- h2o.performance(mod,test_hf)
+perf
+```
+
+```
+## H2OBinomialMetrics: glm
+## 
+## MSE:  0.0336716
+## RMSE:  0.1834982
+## LogLoss:  0.1283486
+## Mean Per-Class Error:  0.1846539
+## AUC:  0.9148011
+## pr_auc:  0.613858
+## Gini:  0.8296023
+## R^2:  0.3546452
+## Residual Deviance:  2114.928
+## AIC:  2278.928
+## 
+## Confusion Matrix (vertical: actual; across: predicted) for F1-optimal threshold:
+##           0   1    Error       Rate
+## 0      7561 223 0.028649  =223/7784
+## 1       155 300 0.340659   =155/455
+## Totals 7716 523 0.045879  =378/8239
+## 
+## Maximum Metrics: Maximum metrics at their respective thresholds
+##                         metric threshold    value idx
+## 1                       max f1  0.217989 0.613497 156
+## 2                       max f2  0.131741 0.657790 196
+## 3                 max f0point5  0.380994 0.678145  85
+## 4                 max accuracy  0.344213 0.962495 102
+## 5                max precision  0.766328 1.000000   0
+## 6                   max recall  0.008369 1.000000 379
+## 7              max specificity  0.766328 1.000000   0
+## 8             max absolute_mcc  0.217989 0.590850 156
+## 9   max min_per_class_accuracy  0.060698 0.828571 260
+## 10 max mean_per_class_accuracy  0.083776 0.843918 231
+## 
+## Gains/Lift Table: Extract with `h2o.gainsLift(&lt;model&gt;, &lt;data&gt;)` or `h2o.gainsLift(&lt;model&gt;, valid=&lt;T/F&gt;, xval=&lt;T/F&gt;)`
+```
+
+---
+
+### H2O Metrics
+
+
+```r
+metrics &lt;- as.data.frame(h2o.metric(perf))
+
+metrics %&gt;%
+  select(-tns,-fps,-tps,-fns) %&gt;%
+  gather(metric, value, f1:tpr) %&gt;%
+  ggplot(aes(x = threshold, y = value, group = metric)) +
+  facet_wrap(~ metric, ncol =5, scales = "free") +
+  geom_line() +
+  theme_minimal()
+```
+
+![](index_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
+
+---
+
+### Precision-recall curve
+
+
+```r
+metrics %&gt;%
+  ggplot(aes(recall,precision)) + 
+  geom_line(size = 1.5) +
+  theme_minimal()
+```
+
+![](index_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
+
+---
+
+# Confusion matrices
+
+
+```r
+h2o.confusionMatrix(perf,metrics = "f2")
+```
+
+```
+## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.131741420722174:
+##           0   1    Error       Rate
+## 0      7419 365 0.046891  =365/7784
+## 1       124 331 0.272527   =124/455
+## Totals 7543 696 0.059352  =489/8239
+```
+
+```r
+h2o.confusionMatrix(perf,metrics = "accuracy")
+```
+
+```
+## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.344213264721167:
+##           0   1    Error       Rate
+## 0      7703  81 0.010406   =81/7784
+## 1       228 227 0.501099   =228/455
+## Totals 7931 308 0.037505  =309/8239
+```
+
+---
+
+### Creating performance plots
+
+
+```r
+library(modelplotr)
+
+scores_and_ntiles &lt;- prepare_scores_and_ntiles(datasets=list("test_data"),
+                                               models = list("mod"),  
+                                               model_labels = list("GBM"), 
+                                               target_column="Churned30",
+                                               ntiles = 100)
+
+scores_and_ntiles &lt;- scores_and_ntiles %&gt;%
+  rename("ntl_0" = ntl_p0,"ntl_1" = ntl_p1)
+
+plot_input &lt;- plotting_scope(prepared_input = scores_and_ntiles)
+```
+
+---
+
+### Cumulative gains
+
+
+```r
+plot_cumgains(data = plot_input)
+```
+
+![](index_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
+
+---
+
+### Cumulative lift
+
+
+```r
+plot_cumlift(data = plot_input)
+```
+
+![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+
+---
+
+### Cumulative response
+
+```r
+plot_cumresponse(data = plot_input)
+```
+
+![](index_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
+
+---
+
+class: inverse, center, middle
+
+# Model interpretation
+
+---
+
+### Variable importance
+
+
+```r
+h2o.varimp_plot(mod)
+```
+
+![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+
+(See the "EVALUATE.R script for how to plot a decision tree from the model)
+
+---
+
+### Local explanations
+
+
+```r
+library(lime)
+
+explainer &lt;- lime(x = train_data, 
+                        model = mod)
+
+explanation &lt;- lime::explain(x = test_data[1:5, ], 
+                             explainer = explainer, 
+                             labels = "p1",
+                             n_features = 3,
+                             kernel_width = 0.5)
+```
+
+---
+
+
+```r
+lime::plot_features(explanation)
+```
+
+![](index_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

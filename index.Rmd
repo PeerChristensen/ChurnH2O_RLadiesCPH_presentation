@@ -21,11 +21,8 @@ class: inverse, center, middle
 
 ---
 
-```{r}
-library(tidyverse)
-```
-
 ```{r echo = F}
+library(tidyverse)
 
 df <- read_csv("new_churn_training.csv") %>%
   mutate(Perm_anyperm = factor(Perm_anyperm),
@@ -69,6 +66,7 @@ names(df[1:50])
 ## Correlation funnel
 
 ```{r}
+library(tidyverse)
 library(correlationfunnel)
 
 df_binned <- df %>%
@@ -197,7 +195,7 @@ today <- max(as.Date(df$DateStatus))
 DateLatestSignup <- today - days(df$DaysSinceLatestSignup)
 
 # Find the signup month
-df$DateLatestSignup_month <- month(DateLatestSignup)
+df$DateLatestSignup_month <- lubridate::month(DateLatestSignup)
 
 df <- df %>% select(-DateStatus)
 ```
@@ -327,6 +325,8 @@ h2o.no_progress()
 
 ---
 
+### Creating H2O frames
+
 ```{r}
 train_hf <- as.h2o(train_data)
 test_hf <- as.h2o(test_data)
@@ -338,7 +338,7 @@ train_hf[, response] <- as.factor(train_hf[, response])
 test_hf[, response]  <- as.factor(test_hf[, response])
 ```
 
----
+### Model training with AutoML
 
 ```{r echo = F}
 aml <- h2o.automl(x = features, 
@@ -347,6 +347,8 @@ aml <- h2o.automl(x = features,
                   balance_classes  = TRUE,
                   max_runtime_secs = 60*1,
                   nfolds = 10)
+
+mod <- aml@leader
 ```
 
 ```{r eval = F}
@@ -360,12 +362,186 @@ aml <- h2o.automl(x = features,
 
 ---
 
+```{r}
+aml@leaderboard %>%
+  as_tibble() %>%
+  select(model_id, auc)
+```
+
+---
+
 ### Save all models
 
 ```{r eval = F}
 for (i in 1:nrow(aml@leaderboard)) {
 
   aml_model = h2o.getModel(aml@leaderboard[i, 1])
-  h2o.saveModel(object = aml_model, "models10")
+  h2o.saveModel(object = aml_model, "models")
 }
 ```
+
+### Load models
+
+If you add the suffix "best" to the filename of the best model, you can load the best model in this way.
+
+```{r eval = F}
+model_path <- glue::glue("models/{list.files('models', pattern = 'best')}")
+
+mod <- h2o.loadModel(model_path)
+```
+---
+..Or if you want lo load and compare multiple models ordered by their positions in the leaderboard, you can do it this way. (see "compare_models.R")
+
+```{r eval = F}
+#list files
+files <- file.info(dir(path = "models", full.names = TRUE), extra_cols = FALSE)
+
+# order by the time of creation
+files_ordered <- files[with(files, order(as.POSIXct(mtime))), ]
+
+# filenames
+file_names <- rownames(files_ordered)
+
+models <- list()
+
+for (i in files[1:5]) {
+  
+  mod <- h2o.loadModel(i)
+  
+  models[i] = mod
+}
+```
+
+---
+
+class: inverse, center, middle
+
+# Evaluating our model
+
+---
+
+### H2O performance objects
+
+```{r}
+perf <- h2o.performance(mod,test_hf)
+perf
+```
+
+---
+
+### H2O Metrics
+
+```{r}
+metrics <- as.data.frame(h2o.metric(perf))
+
+metrics %>%
+  select(-tns,-fps,-tps,-fns) %>%
+  gather(metric, value, f1:tpr) %>%
+  ggplot(aes(x = threshold, y = value, group = metric)) +
+  facet_wrap(~ metric, ncol =5, scales = "free") +
+  geom_line() +
+  theme_minimal()
+```
+
+---
+
+### Precision-recall curve
+
+```{r fig.height = 5}
+metrics %>%
+  ggplot(aes(recall,precision)) + 
+  geom_line(size = 1.5) +
+  theme_minimal()
+```
+
+---
+
+# Confusion matrices
+
+```{r}
+h2o.confusionMatrix(perf,metrics = "f2")
+
+h2o.confusionMatrix(perf,metrics = "accuracy")
+```
+
+---
+
+### Creating performance plots
+
+```{r}
+library(modelplotr)
+
+scores_and_ntiles <- prepare_scores_and_ntiles(datasets=list("test_data"),
+                                               models = list("mod"),  
+                                               model_labels = list("GBM"), 
+                                               target_column="Churned30",
+                                               ntiles = 100)
+
+scores_and_ntiles <- scores_and_ntiles %>%
+  rename("ntl_0" = ntl_p0,"ntl_1" = ntl_p1)
+
+plot_input <- plotting_scope(prepared_input = scores_and_ntiles)
+```
+
+---
+
+### Cumulative gains
+
+```{r fig.height = 5}
+plot_cumgains(data = plot_input)
+```
+
+---
+
+### Cumulative lift
+
+```{r fig.height = 5}
+plot_cumlift(data = plot_input)
+```
+
+---
+
+### Cumulative response
+```{r fig.height = 5}
+plot_cumresponse(data = plot_input)
+```
+
+---
+
+class: inverse, center, middle
+
+# Model interpretation
+
+---
+
+### Variable importance
+
+```{r fig.height = 5}
+h2o.varimp_plot(mod)
+```
+
+(See the "EVALUATE.R script for how to plot a decision tree from the model)
+
+---
+
+### Local explanations
+
+```{r}
+library(lime)
+
+explainer <- lime(x = train_data, 
+                        model = mod)
+
+explanation <- lime::explain(x = test_data[1:5, ], 
+                             explainer = explainer, 
+                             labels = "p1",
+                             n_features = 3,
+                             kernel_width = 0.5)
+```
+
+---
+
+```{r}
+lime::plot_features(explanation)
+```
+
