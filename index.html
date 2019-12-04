@@ -4,7 +4,6 @@
     <title>Churn Prediction with H2O AutoML</title>
     <meta charset="utf-8" />
     <meta name="author" content="Peer Christensen" />
-    <meta name="date" content="2019-12-05" />
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
   </head>
@@ -14,7 +13,7 @@ class: center, middle, inverse, title-slide
 
 # Churn Prediction with H2O AutoML
 ### Peer Christensen
-### 2019-12-05
+### R-Ladies Copenhagen, 2019-12-05
 
 ---
 
@@ -381,14 +380,14 @@ h2o.init(nthreads = -1)
 ##  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         1 hours 56 minutes 
+##     H2O cluster uptime:         3 hours 40 minutes 
 ##     H2O cluster timezone:       Europe/Paris 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.26.0.2 
 ##     H2O cluster version age:    4 months and 7 days !!! 
 ##     H2O cluster name:           H2O_started_from_R_pech_twl513 
 ##     H2O cluster total nodes:    1 
-##     H2O cluster total memory:   1.62 GB 
+##     H2O cluster total memory:   1.48 GB 
 ##     H2O cluster total cores:    4 
 ##     H2O cluster allowed cores:  4 
 ##     H2O cluster healthy:        TRUE 
@@ -447,7 +446,7 @@ aml@leaderboard %&gt;%
 ## # A tibble: 1 x 2
 ##   model_id                                    auc
 ##   &lt;chr&gt;                                     &lt;dbl&gt;
-## 1 GLM_grid_1_AutoML_20191204_131121_model_1 0.891
+## 1 GLM_grid_1_AutoML_20191204_145546_model_1 0.904
 ```
 
 ---
@@ -517,7 +516,7 @@ perf@metrics$pr_auc
 ```
 
 ```
-## [1] 0.556672
+## [1] 0.601154
 ```
 
 ```r
@@ -527,16 +526,16 @@ perf@metrics$max_criteria_and_metric_scores
 ```
 ## Maximum Metrics: Maximum metrics at their respective thresholds
 ##                         metric threshold    value idx
-## 1                       max f1  0.150414 0.572067 106
-## 2                       max f2  0.114831 0.607812 141
-## 3                 max f0point5  0.203337 0.616771  69
-## 4                 max accuracy  0.212438 0.958005  62
-## 5                max precision  0.409623 1.000000   0
-## 6                   max recall  0.015166 1.000000 366
-## 7              max specificity  0.409623 1.000000   0
-## 8             max absolute_mcc  0.150414 0.547582 106
-## 9   max min_per_class_accuracy  0.078554 0.824176 196
-## 10 max mean_per_class_accuracy  0.086660 0.834274 182
+## 1                       max f1  0.189153 0.604167 147
+## 2                       max f2  0.140748 0.656771 173
+## 3                 max f0point5  0.323366 0.662865  83
+## 4                 max accuracy  0.323366 0.961160  83
+## 5                max precision  0.673667 1.000000   0
+## 6                   max recall  0.010350 1.000000 375
+## 7              max specificity  0.673667 1.000000   0
+## 8             max absolute_mcc  0.189153 0.580638 147
+## 9   max min_per_class_accuracy  0.068021 0.832967 242
+## 10 max mean_per_class_accuracy  0.103447 0.843322 199
 ```
 
 ---
@@ -549,16 +548,16 @@ perf@metrics$max_criteria_and_metric_scores
 ```
 ## Maximum Metrics: Maximum metrics at their respective thresholds
 ##                         metric threshold    value idx
-## 1                       max f1  0.150414 0.572067 106
-## 2                       max f2  0.114831 0.607812 141
-## 3                 max f0point5  0.203337 0.616771  69
-## 4                 max accuracy  0.212438 0.958005  62
-## 5                max precision  0.409623 1.000000   0
-## 6                   max recall  0.015166 1.000000 366
-## 7              max specificity  0.409623 1.000000   0
-## 8             max absolute_mcc  0.150414 0.547582 106
-## 9   max min_per_class_accuracy  0.078554 0.824176 196
-## 10 max mean_per_class_accuracy  0.086660 0.834274 182
+## 1                       max f1  0.189153 0.604167 147
+## 2                       max f2  0.140748 0.656771 173
+## 3                 max f0point5  0.323366 0.662865  83
+## 4                 max accuracy  0.323366 0.961160  83
+## 5                max precision  0.673667 1.000000   0
+## 6                   max recall  0.010350 1.000000 375
+## 7              max specificity  0.673667 1.000000   0
+## 8             max absolute_mcc  0.189153 0.580638 147
+## 9   max min_per_class_accuracy  0.068021 0.832967 242
+## 10 max mean_per_class_accuracy  0.103447 0.843322 199
 ```
 
 ---
@@ -604,11 +603,11 @@ h2o.confusionMatrix(perf,metrics = "f2")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.114830568119997:
+## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.140747888036868:
 ##           0   1    Error       Rate
-## 0      7400 384 0.049332  =384/7784
-## 1       150 305 0.329670   =150/455
-## Totals 7550 689 0.064814  =534/8239
+## 0      7468 316 0.040596  =316/7784
+## 1       132 323 0.290110   =132/455
+## Totals 7600 639 0.054376  =448/8239
 ```
 
 ```r
@@ -616,11 +615,11 @@ h2o.confusionMatrix(perf,metrics = "accuracy")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.212437697937338:
+## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.323365506405658:
 ##           0   1    Error       Rate
 ## 0      7733  51 0.006552   =51/7784
-## 1       295 160 0.648352   =295/455
-## Totals 8028 211 0.041995  =346/8239
+## 1       269 186 0.591209   =269/455
+## Totals 8002 237 0.038840  =320/8239
 ```
 
 ---
