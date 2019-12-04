@@ -7,6 +7,7 @@
     <meta name="date" content="2019-12-05" />
     <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
     <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <script src="libs/kePrint-0.0.1/kePrint.js"></script>
   </head>
   <body>
     <textarea id="source">
@@ -104,10 +105,6 @@ names(df[1:50])
 
 ---
 
-
-
----
-
 ## Correlation funnel
 
 
@@ -115,6 +112,7 @@ names(df[1:50])
 library(correlationfunnel)
 
 df_binned &lt;- df %&gt;%
+  select(-DateStatus) %&gt;%
   binarize(n_bins = 5, thresh_infreq = 0.01, name_infreq = "OTHER", one_hot = TRUE)
 
 df_churn_corr &lt;- df_binned %&gt;%
@@ -129,7 +127,7 @@ df_churn_corr %&gt;%
   plot_correlation_funnel()
 ```
 
-![](index_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -141,7 +139,7 @@ df_churn_corr %&gt;%
   plot_correlation_funnel()
 ```
 
-![](index_files/figure-html/unnamed-chunk-9-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -171,7 +169,7 @@ categorical_features &lt;- df %&gt;%
 
 ---
 
-Churn ~ Numeric variables
+## Churn ~ Numeric variables
 
 
 ```r
@@ -195,11 +193,11 @@ p1 &lt;- df %&gt;%
 p1
 ```
 
-![](index_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-11-1.png)&lt;!-- --&gt;
 
 ---
 
-Churn ~ Categorical variables
+## Churn ~ Categorical variables
 
 
 ```r
@@ -225,7 +223,116 @@ p2 &lt;- df %&gt;%
 p2
 ```
 
-![](index_files/figure-html/unnamed-chunk-14-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-13-1.png)&lt;!-- --&gt;
+
+---
+
+class: inverse, center, middle
+
+# Feature engineering
+
+---
+
+### Calculate order size
+
+
+```r
+df$AverageOrderSize &lt;- df$TotalNetRevenue / df$TotalOrderCount
+```
+
+### Signup month
+
+
+```r
+library(lubridate)
+
+# Get the current date
+today &lt;- max(as.Date(df$DateStatus)) 
+
+# Get the signup date
+DateLatestSignup &lt;- today - days(df$DaysSinceLatestSignup)
+
+# Find the signup month
+df$DateLatestSignup_month &lt;- month(DateLatestSignup)
+
+df &lt;- df %&gt;% select(-DateStatus)
+```
+
+---
+
+## Ratio of literary preferences
+
+
+```r
+f_lit_mean &lt;- df %&gt;% 
+  select(starts_with("F0")) %&gt;%
+  transmute(m = rowMeans(.)) %&gt;%
+  pull(m)
+
+s_lit_mean &lt;- df %&gt;% 
+  select(starts_with("S0")) %&gt;%
+  transmute(m = rowMeans(.))  %&gt;%
+  pull(m)
+
+f_ratio &lt;- f_lit_mean / (s_lit_mean +f_lit_mean)
+```
+
+---
+
+## Principal components
+
+
+```r
+s_lit_vars &lt;- df %&gt;% 
+  select(starts_with("S0")) %&gt;%
+           names()
+
+f_lit_vars &lt;- df %&gt;% 
+  select(starts_with("F0")) %&gt;%
+  names()
+
+pca_s &lt;- prcomp(df[s_lit_vars], scale = FALSE) 
+pca_f &lt;- prcomp(df[f_lit_vars], scale = FALSE)
+
+df &lt;- df %&gt;%
+  mutate(
+    pc_s1 = pca_s$x[,1],
+    pc_s2 = pca_s$x[,2],
+    pc_f1 = pca_f$x[,1],
+    pc_f2 = pca_f$x[,2]
+  )
+
+#remove original f-s variables
+df &lt;- df %&gt;%
+  select(-f_lit_vars,-s_lit_vars)
+```
+
+---
+
+class: inverse, center, middle
+
+# Data partitioning
+
+---
+
+
+```r
+library(caret)
+
+df$Customer_Key &lt;- as.character(Customer_Key)
+
+set.seed(42)
+index &lt;- createDataPartition(df$Churned30, p = 0.7, list = FALSE)
+
+train_data &lt;- df[ index, ]
+test_data  &lt;- df[-index, ]
+
+Customer_Key_train &lt;- train_data$Customer_Key
+Customer_Key_test &lt;- test_data$Customer_Key
+
+train_data &lt;- train_data %&gt;% select(-Customer_Key)
+test_data  &lt;- test_data  %&gt;% select(-Customer_Key)
+```
 
 ---
 
@@ -235,11 +342,156 @@ class: inverse, center, middle
 
 ---
 
-class: inverse, center, middle
 
-# Preprocess
+```r
+library(recipes)
+
+recipe_churn &lt;- recipe(Churned30 ~ ., train_data) %&gt;%
+  step_nzv(all_numeric(), -all_outcomes()) %&gt;%
+  step_YeoJohnson(all_numeric(), -all_outcomes()) %&gt;%
+  step_corr(all_numeric(), -all_outcomes()) %&gt;%
+  step_center(all_numeric(), -all_outcomes()) %&gt;%
+  step_scale(all_numeric(), -all_outcomes()) %&gt;%
+  prep(data = train_data)
+
+train_data &lt;- bake(recipe_churn, new_data = train_data) %&gt;%
+  select(Churned30, everything())
+
+test_data &lt;- bake(recipe_churn, new_data = test_data) %&gt;%
+  select(Churned30, everything())
+
+train_data$Customer_Key &lt;- Customer_Key_train
+test_data$Customer_Key &lt;- Customer_Key_test
+
+# save recipe
+saveRDS(recipe_churn,"recipe_preprocess.rds")
+```
 
 ---
+
+class: inverse, center, middle
+
+# Training with H2O!
+
+---
+
+
+```r
+library(h2o)
+
+h2o.init(nthreads = -1)
+```
+
+```
+## 
+## H2O is not running yet, starting it now...
+## 
+## Note:  In case of errors look at the following log files:
+##     C:\Users\pech\AppData\Local\Temp\RtmpUFSdde/h2o_pech_started_from_r.out
+##     C:\Users\pech\AppData\Local\Temp\RtmpUFSdde/h2o_pech_started_from_r.err
+## 
+## 
+## Starting H2O JVM and connecting: . Connection successful!
+## 
+## R is connected to the H2O cluster: 
+##     H2O cluster uptime:         2 seconds 997 milliseconds 
+##     H2O cluster timezone:       Europe/Paris 
+##     H2O data parsing timezone:  UTC 
+##     H2O cluster version:        3.26.0.2 
+##     H2O cluster version age:    4 months and 6 days !!! 
+##     H2O cluster name:           H2O_started_from_R_pech_cda172 
+##     H2O cluster total nodes:    1 
+##     H2O cluster total memory:   1.75 GB 
+##     H2O cluster total cores:    4 
+##     H2O cluster allowed cores:  4 
+##     H2O cluster healthy:        TRUE 
+##     H2O Connection ip:          localhost 
+##     H2O Connection port:        54321 
+##     H2O Connection proxy:       NA 
+##     H2O Internal Security:      FALSE 
+##     H2O API Extensions:         Amazon S3, Algos, AutoML, Core V3, Core V4 
+##     R Version:                  R version 3.6.1 (2019-07-05)
+```
+
+```r
+h2o.no_progress()
+```
+
+---
+
+
+```r
+train_hf &lt;- as.h2o(train_data)
+test_hf &lt;- as.h2o(test_data)
+
+response &lt;- "Churned30"
+features &lt;- setdiff(colnames(train_hf), response)
+
+train_hf[, response] &lt;- as.factor(train_hf[, response])
+test_hf[, response]  &lt;- as.factor(test_hf[, response])
+```
+
+---
+
+
+
+
+```r
+aml &lt;- h2o.automl(x = features, 
+                  y = response,
+                  training_frame   = train_hf,
+                  balance_classes  = TRUE,
+                  max_runtime_secs = 3600*5,
+                  nfolds = 10)
+```
+
+---
+
+
+```r
+library(knitr)
+library(kableExtra)
+
+
+aml@leaderboard %&gt;% 
+  as_tibble() %&gt;%
+  kable() %&gt;% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+&lt;table class="table table-striped table-hover table-condensed table-responsive" style="margin-left: auto; margin-right: auto;"&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt; model_id &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; auc &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; logloss &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; mean_per_class_error &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; rmse &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; mse &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; GLM_grid_1_AutoML_20191203_180030_model_1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.8996386 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.1500313 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.2341224 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.2002893 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.0401158 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+### Save all models
+
+
+```r
+# for (i in 1:nrow(aml@leaderboard)) {
+#   
+#   aml_model = h2o.getModel(aml@leaderboard[i, 1])
+#   h2o.saveModel(object = aml_model, "models10")
+# }
+```
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
