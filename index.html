@@ -387,14 +387,14 @@ h2o.init(nthreads = -1)
 ## H2O is not running yet, starting it now...
 ## 
 ## Note:  In case of errors look at the following log files:
-##     C:\Users\pech\AppData\Local\Temp\RtmpEVyOhM/h2o_pech_started_from_r.out
-##     C:\Users\pech\AppData\Local\Temp\RtmpEVyOhM/h2o_pech_started_from_r.err
+##     C:\Users\pech\AppData\Local\Temp\RtmpwlcGQb/h2o_pech_started_from_r.out
+##     C:\Users\pech\AppData\Local\Temp\RtmpwlcGQb/h2o_pech_started_from_r.err
 ## 
 ## 
 ## Starting H2O JVM and connecting:  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         3 seconds 364 milliseconds 
+##     H2O cluster uptime:         3 seconds 621 milliseconds 
 ##     H2O cluster timezone:       Europe/Paris 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.26.0.2 
@@ -466,23 +466,23 @@ aml@leaderboard %&gt;%
 ## # A tibble: 17 x 2
 ##    model_id                                              auc
 ##    &lt;chr&gt;                                               &lt;dbl&gt;
-##  1 GBM_1_AutoML_20191205_135216                        0.955
-##  2 GBM_3_AutoML_20191205_135216                        0.954
-##  3 GBM_5_AutoML_20191205_135216                        0.954
-##  4 GBM_4_AutoML_20191205_135216                        0.954
-##  5 GBM_2_AutoML_20191205_135216                        0.953
-##  6 StackedEnsemble_BestOfFamily_AutoML_20191205_135216 0.952
-##  7 GBM_grid_1_AutoML_20191205_135216_model_1           0.950
-##  8 StackedEnsemble_AllModels_AutoML_20191205_135216    0.945
-##  9 XRT_1_AutoML_20191205_135216                        0.942
-## 10 DRF_1_AutoML_20191205_135216                        0.939
-## 11 GBM_grid_1_AutoML_20191205_135216_model_2           0.938
-## 12 DeepLearning_grid_1_AutoML_20191205_135216_model_2  0.929
-## 13 DeepLearning_1_AutoML_20191205_135216               0.923
-## 14 DeepLearning_grid_1_AutoML_20191205_135216_model_1  0.920
-## 15 GBM_grid_1_AutoML_20191205_135216_model_3           0.920
-## 16 GLM_grid_1_AutoML_20191205_135216_model_1           0.910
-## 17 DeepLearning_grid_1_AutoML_20191205_135216_model_3  0.909
+##  1 GBM_2_AutoML_20191205_150015                        0.956
+##  2 GBM_grid_1_AutoML_20191205_150015_model_1           0.956
+##  3 GBM_3_AutoML_20191205_150015                        0.955
+##  4 GBM_1_AutoML_20191205_150015                        0.955
+##  5 GBM_5_AutoML_20191205_150015                        0.955
+##  6 GBM_grid_1_AutoML_20191205_150015_model_2           0.955
+##  7 GBM_4_AutoML_20191205_150015                        0.953
+##  8 StackedEnsemble_AllModels_AutoML_20191205_150015    0.950
+##  9 StackedEnsemble_BestOfFamily_AutoML_20191205_150015 0.946
+## 10 DRF_1_AutoML_20191205_150015                        0.943
+## 11 XRT_1_AutoML_20191205_150015                        0.941
+## 12 GBM_grid_1_AutoML_20191205_150015_model_3           0.936
+## 13 DeepLearning_grid_1_AutoML_20191205_150015_model_3  0.929
+## 14 DeepLearning_1_AutoML_20191205_150015               0.928
+## 15 DeepLearning_grid_1_AutoML_20191205_150015_model_2  0.922
+## 16 DeepLearning_grid_1_AutoML_20191205_150015_model_1  0.918
+## 17 GLM_grid_1_AutoML_20191205_150015_model_1           0.910
 ```
 
 ---
@@ -556,7 +556,7 @@ perf@metrics$pr_auc
 ```
 
 ```
-## [1] 0.7941141
+## [1] 0.7962993
 ```
 
 ```r
@@ -566,16 +566,16 @@ perf@metrics$max_criteria_and_metric_scores
 ```
 ## Maximum Metrics: Maximum metrics at their respective thresholds
 ##                         metric threshold    value idx
-## 1                       max f1  0.283728 0.740291 186
-## 2                       max f2  0.079548 0.753191 260
-## 3                 max f0point5  0.583438 0.821206 111
-## 4                 max accuracy  0.350871 0.974269 167
-## 5                max precision  0.952180 1.000000   0
-## 6                   max recall  0.000349 1.000000 398
-## 7              max specificity  0.952180 1.000000   0
-## 8             max absolute_mcc  0.283728 0.731198 186
-## 9   max min_per_class_accuracy  0.014838 0.877312 335
-## 10 max mean_per_class_accuracy  0.028822 0.886358 304
+## 1                       max f1  0.157420 0.745958 231
+## 2                       max f2  0.085874 0.738562 263
+## 3                 max f0point5  0.614708 0.829164 121
+## 4                 max accuracy  0.342846 0.974754 174
+## 5                max precision  0.973363 1.000000   0
+## 6                   max recall  0.000515 1.000000 394
+## 7              max specificity  0.973363 1.000000   0
+## 8             max absolute_mcc  0.212284 0.735636 211
+## 9   max min_per_class_accuracy  0.010328 0.883516 347
+## 10 max mean_per_class_accuracy  0.012166 0.886746 342
 ```
 
 ---
@@ -613,7 +613,7 @@ metrics %&gt;%
 
 ---
 
-## Confusion matrices
+### Confusion matrices
 
 
 ```r
@@ -621,11 +621,11 @@ h2o.confusionMatrix(perf,metrics = "f2")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.0795476833284495:
+## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.0858743791131741:
 ##           0   1    Error       Rate
-## 0      7608 176 0.022610  =176/7784
-## 1       101 354 0.221978   =101/455
-## Totals 7709 530 0.033621  =277/8239
+## 0      7648 136 0.017472  =136/7784
+## 1       116 339 0.254945   =116/455
+## Totals 7764 475 0.030586  =252/8239
 ```
 
 ```r
@@ -633,11 +633,11 @@ h2o.confusionMatrix(perf,metrics = "accuracy")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.350871471878673:
+## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.342845905998153:
 ##           0   1    Error       Rate
-## 0      7738  46 0.005910   =46/7784
-## 1       166 289 0.364835   =166/455
-## Totals 7904 335 0.025731  =212/8239
+## 0      7751  33 0.004239   =33/7784
+## 1       175 280 0.384615   =175/455
+## Totals 7926 313 0.025246  =208/8239
 ```
 
 ---

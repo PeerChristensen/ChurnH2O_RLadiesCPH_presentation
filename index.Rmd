@@ -449,7 +449,7 @@ perf@metrics$max_criteria_and_metric_scores
 
 ### H2O Metrics
 
-```{r}
+```{r fig.width = 9}
 metrics <- as.data.frame(h2o.metric(perf))
 
 metrics %>%
@@ -474,7 +474,7 @@ metrics %>%
 
 ---
 
-## Confusion matrices
+### Confusion matrices
 
 ```{r}
 h2o.confusionMatrix(perf,metrics = "f2")
