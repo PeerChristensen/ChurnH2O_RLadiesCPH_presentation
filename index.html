@@ -28,6 +28,8 @@ class: inverse, center, middle
 
 
 
+### Rows and columns
+
 
 ```r
 dim(df)
@@ -37,6 +39,7 @@ dim(df)
 ## [1] 27465    67
 ```
 
+--
 
 ### Checking for target class (im)balance
 
@@ -181,7 +184,9 @@ p1 &lt;- df %&gt;%
   scale_fill_manual(values=c(red,blue)) +
   scale_colour_manual(values=c(red,blue))
 ```
+
 ---
+
 
 ```r
 p1
@@ -211,7 +216,9 @@ p2 &lt;- df %&gt;%
   scale_fill_manual(values=c(red,blue)) +
   scale_colour_manual(values=c(red,blue))
 ```
+
 ---
+
 
 ```r
 p2
@@ -354,9 +361,6 @@ train_data &lt;- bake(recipe_churn, new_data = train_data) %&gt;%
 test_data &lt;- bake(recipe_churn, new_data = test_data) %&gt;%
   select(Churned30, everything())
 
-train_data$Customer_Key &lt;- Customer_Key_train
-test_data$Customer_Key &lt;- Customer_Key_test
-
 # save recipe
 saveRDS(recipe_churn,"recipe_preprocess.rds")
 ```
@@ -369,6 +373,8 @@ class: inverse, center, middle
 
 ---
 
+### Step 1: start an H2O instance
+
 
 ```r
 library(h2o)
@@ -377,17 +383,25 @@ h2o.init(nthreads = -1)
 ```
 
 ```
-##  Connection successful!
+## 
+## H2O is not running yet, starting it now...
+## 
+## Note:  In case of errors look at the following log files:
+##     C:\Users\pech\AppData\Local\Temp\RtmpEVyOhM/h2o_pech_started_from_r.out
+##     C:\Users\pech\AppData\Local\Temp\RtmpEVyOhM/h2o_pech_started_from_r.err
+## 
+## 
+## Starting H2O JVM and connecting:  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         3 hours 40 minutes 
+##     H2O cluster uptime:         3 seconds 364 milliseconds 
 ##     H2O cluster timezone:       Europe/Paris 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.26.0.2 
-##     H2O cluster version age:    4 months and 7 days !!! 
-##     H2O cluster name:           H2O_started_from_R_pech_twl513 
+##     H2O cluster version age:    4 months and 8 days !!! 
+##     H2O cluster name:           H2O_started_from_R_pech_cda172 
 ##     H2O cluster total nodes:    1 
-##     H2O cluster total memory:   1.48 GB 
+##     H2O cluster total memory:   1.75 GB 
 ##     H2O cluster total cores:    4 
 ##     H2O cluster allowed cores:  4 
 ##     H2O cluster healthy:        TRUE 
@@ -405,7 +419,7 @@ h2o.no_progress()
 
 ---
 
-### Creating H2O frames
+### Step 2: Creating H2O frames
 
 
 ```r
@@ -419,7 +433,9 @@ train_hf[, response] &lt;- as.factor(train_hf[, response])
 test_hf[, response]  &lt;- as.factor(test_hf[, response])
 ```
 
-### Model training with AutoML
+--
+
+### Step 3: Model training with AutoML
 
 
 
@@ -430,10 +446,14 @@ aml &lt;- h2o.automl(x = features,
                   training_frame   = train_hf,
                   balance_classes  = TRUE,
                   max_runtime_secs = 3600*5,
+                  stopping_metric  = "AUC", # AUCPR will be available soon
+                  sort_metric      = "AUC",
                   nfolds = 10)
 ```
 
 ---
+
+### Ta-Dah!
 
 
 ```r
@@ -443,10 +463,26 @@ aml@leaderboard %&gt;%
 ```
 
 ```
-## # A tibble: 1 x 2
-##   model_id                                    auc
-##   &lt;chr&gt;                                     &lt;dbl&gt;
-## 1 GLM_grid_1_AutoML_20191204_145546_model_1 0.904
+## # A tibble: 17 x 2
+##    model_id                                              auc
+##    &lt;chr&gt;                                               &lt;dbl&gt;
+##  1 GBM_1_AutoML_20191205_135216                        0.955
+##  2 GBM_3_AutoML_20191205_135216                        0.954
+##  3 GBM_5_AutoML_20191205_135216                        0.954
+##  4 GBM_4_AutoML_20191205_135216                        0.954
+##  5 GBM_2_AutoML_20191205_135216                        0.953
+##  6 StackedEnsemble_BestOfFamily_AutoML_20191205_135216 0.952
+##  7 GBM_grid_1_AutoML_20191205_135216_model_1           0.950
+##  8 StackedEnsemble_AllModels_AutoML_20191205_135216    0.945
+##  9 XRT_1_AutoML_20191205_135216                        0.942
+## 10 DRF_1_AutoML_20191205_135216                        0.939
+## 11 GBM_grid_1_AutoML_20191205_135216_model_2           0.938
+## 12 DeepLearning_grid_1_AutoML_20191205_135216_model_2  0.929
+## 13 DeepLearning_1_AutoML_20191205_135216               0.923
+## 14 DeepLearning_grid_1_AutoML_20191205_135216_model_1  0.920
+## 15 GBM_grid_1_AutoML_20191205_135216_model_3           0.920
+## 16 GLM_grid_1_AutoML_20191205_135216_model_1           0.910
+## 17 DeepLearning_grid_1_AutoML_20191205_135216_model_3  0.909
 ```
 
 ---
@@ -461,6 +497,8 @@ for (i in 1:nrow(aml@leaderboard)) {
   h2o.saveModel(object = aml_model, "models")
 }
 ```
+
+--
 
 ### Load models
 
@@ -510,13 +548,15 @@ class: inverse, center, middle
 
 
 ```r
+mod &lt;- aml@leader
+
 perf &lt;- h2o.performance(mod,test_hf)
 
 perf@metrics$pr_auc
 ```
 
 ```
-## [1] 0.601154
+## [1] 0.7941141
 ```
 
 ```r
@@ -526,38 +566,16 @@ perf@metrics$max_criteria_and_metric_scores
 ```
 ## Maximum Metrics: Maximum metrics at their respective thresholds
 ##                         metric threshold    value idx
-## 1                       max f1  0.189153 0.604167 147
-## 2                       max f2  0.140748 0.656771 173
-## 3                 max f0point5  0.323366 0.662865  83
-## 4                 max accuracy  0.323366 0.961160  83
-## 5                max precision  0.673667 1.000000   0
-## 6                   max recall  0.010350 1.000000 375
-## 7              max specificity  0.673667 1.000000   0
-## 8             max absolute_mcc  0.189153 0.580638 147
-## 9   max min_per_class_accuracy  0.068021 0.832967 242
-## 10 max mean_per_class_accuracy  0.103447 0.843322 199
-```
-
----
-
-
-```r
-perf@metrics$max_criteria_and_metric_scores
-```
-
-```
-## Maximum Metrics: Maximum metrics at their respective thresholds
-##                         metric threshold    value idx
-## 1                       max f1  0.189153 0.604167 147
-## 2                       max f2  0.140748 0.656771 173
-## 3                 max f0point5  0.323366 0.662865  83
-## 4                 max accuracy  0.323366 0.961160  83
-## 5                max precision  0.673667 1.000000   0
-## 6                   max recall  0.010350 1.000000 375
-## 7              max specificity  0.673667 1.000000   0
-## 8             max absolute_mcc  0.189153 0.580638 147
-## 9   max min_per_class_accuracy  0.068021 0.832967 242
-## 10 max mean_per_class_accuracy  0.103447 0.843322 199
+## 1                       max f1  0.283728 0.740291 186
+## 2                       max f2  0.079548 0.753191 260
+## 3                 max f0point5  0.583438 0.821206 111
+## 4                 max accuracy  0.350871 0.974269 167
+## 5                max precision  0.952180 1.000000   0
+## 6                   max recall  0.000349 1.000000 398
+## 7              max specificity  0.952180 1.000000   0
+## 8             max absolute_mcc  0.283728 0.731198 186
+## 9   max min_per_class_accuracy  0.014838 0.877312 335
+## 10 max mean_per_class_accuracy  0.028822 0.886358 304
 ```
 
 ---
@@ -577,7 +595,7 @@ metrics %&gt;%
   theme_minimal()
 ```
 
-![](index_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -591,11 +609,11 @@ metrics %&gt;%
   theme_minimal()
 ```
 
-![](index_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
 
 ---
 
-# Confusion matrices
+## Confusion matrices
 
 
 ```r
@@ -603,11 +621,11 @@ h2o.confusionMatrix(perf,metrics = "f2")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.140747888036868:
+## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.0795476833284495:
 ##           0   1    Error       Rate
-## 0      7468 316 0.040596  =316/7784
-## 1       132 323 0.290110   =132/455
-## Totals 7600 639 0.054376  =448/8239
+## 0      7608 176 0.022610  =176/7784
+## 1       101 354 0.221978   =101/455
+## Totals 7709 530 0.033621  =277/8239
 ```
 
 ```r
@@ -615,11 +633,11 @@ h2o.confusionMatrix(perf,metrics = "accuracy")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.323365506405658:
+## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.350871471878673:
 ##           0   1    Error       Rate
-## 0      7733  51 0.006552   =51/7784
-## 1       269 186 0.591209   =269/455
-## Totals 8002 237 0.038840  =320/8239
+## 0      7738  46 0.005910   =46/7784
+## 1       166 289 0.364835   =166/455
+## Totals 7904 335 0.025731  =212/8239
 ```
 
 ---
@@ -646,33 +664,40 @@ plot_input &lt;- plotting_scope(prepared_input = scores_and_ntiles)
 
 ### Cumulative gains
 
+*"When we apply the model and select the best X ntiles, what % of the actual target class observations can we expect to target?"*
+
 
 ```r
 plot_cumgains(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
 
 ---
 
 ### Cumulative lift
+
+*"When we apply the model and select the best X ntiles, how many times better is that than using no model at all?"*
 
 
 ```r
 plot_cumlift(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
 
 ---
 
 ### Cumulative response
 
+*"When we apply the model and select ntile X, what is the expected % of target class observations in that ntile?"*
+
+
 ```r
 plot_cumresponse(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -689,7 +714,7 @@ class: inverse, center, middle
 h2o.varimp_plot(mod)
 ```
 
-![](index_files/figure-html/unnamed-chunk-36-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
 
 (See the "EVALUATE.R script for how to plot a decision tree from the model)
 
@@ -718,7 +743,44 @@ explanation &lt;- lime::explain(x = test_data[1:5, ],
 lime::plot_features(explanation)
 ```
 
-![](index_files/figure-html/unnamed-chunk-38-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+
+---
+
+class: inverse, center, middle
+
+# What we didn't cover
+
+---
+
+### Comparing models
+
+Including sorting models based on e.g. AUCPR (see "compare_models.R" script")
+
+--
+### Decision tree
+
+See the "EVALUATE.R" for how to plot the model as a decision tree
+
+--
+### Predicting on new data
+
+Including changing model predictions according to other thresholds for optimizing e.g. the F2 score (see the "PREDICT.R") script
+
+--
+### Clustering churners
+
+Based on model explanations for churn, we can cluster customers according to the variable weights obtained with LIME.
+
+---
+
+class: inverse, center, middle
+
+# Thank You!
+
+### hr.pchristensen@gmail.com
+
+### &lt;https://github.com/PeerChristensen/Churn_autoML&gt;
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>

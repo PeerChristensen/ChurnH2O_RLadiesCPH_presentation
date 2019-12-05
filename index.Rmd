@@ -42,10 +42,13 @@ Customer_Key <- df$Customer_Key
 df <- df %>% select(-Customer_Key)
 ```
 
+### Rows and columns
+
 ```{r}
 dim(df)
 ```
 
+--
 
 ### Checking for target class (im)balance
 
@@ -138,7 +141,9 @@ p1 <- df %>%
   scale_fill_manual(values=c(red,blue)) +
   scale_colour_manual(values=c(red,blue))
 ```
+
 ---
+
 ```{r}
 p1
 ```
@@ -164,7 +169,9 @@ p2 <- df %>%
   scale_fill_manual(values=c(red,blue)) +
   scale_colour_manual(values=c(red,blue))
 ```
+
 ---
+
 ```{r}
 p2
 ```
@@ -298,13 +305,8 @@ train_data <- bake(recipe_churn, new_data = train_data) %>%
 test_data <- bake(recipe_churn, new_data = test_data) %>%
   select(Churned30, everything())
 
-train_data$Customer_Key <- Customer_Key_train
-test_data$Customer_Key <- Customer_Key_test
-
 # save recipe
 saveRDS(recipe_churn,"recipe_preprocess.rds")
-
-
 ```
 
 ---
@@ -314,6 +316,8 @@ class: inverse, center, middle
 # Training with H2O!
 
 ---
+
+### Step 1: start an H2O instance
 
 ```{r}
 library(h2o)
@@ -325,7 +329,7 @@ h2o.no_progress()
 
 ---
 
-### Creating H2O frames
+### Step 2: Creating H2O frames
 
 ```{r}
 train_hf <- as.h2o(train_data)
@@ -338,17 +342,18 @@ train_hf[, response] <- as.factor(train_hf[, response])
 test_hf[, response]  <- as.factor(test_hf[, response])
 ```
 
-### Model training with AutoML
+--
+
+### Step 3: Model training with AutoML
 
 ```{r echo = F}
 aml <- h2o.automl(x = features, 
                   y = response,
                   training_frame   = train_hf,
                   balance_classes  = TRUE,
-                  max_runtime_secs = 60*1,
+                  max_runtime_secs = 60*15,
                   nfolds = 10)
 
-mod <- aml@leader
 ```
 
 ```{r eval = F}
@@ -357,10 +362,14 @@ aml <- h2o.automl(x = features,
                   training_frame   = train_hf,
                   balance_classes  = TRUE,
                   max_runtime_secs = 3600*5,
+                  stopping_metric  = "AUC", # AUCPR will be available soon
+                  sort_metric      = "AUC",
                   nfolds = 10)
 ```
 
 ---
+
+### Ta-Dah!
 
 ```{r}
 aml@leaderboard %>%
@@ -379,6 +388,8 @@ for (i in 1:nrow(aml@leaderboard)) {
   h2o.saveModel(object = aml_model, "models")
 }
 ```
+
+--
 
 ### Load models
 
@@ -425,16 +436,12 @@ class: inverse, center, middle
 ### H2O performance objects
 
 ```{r}
+mod <- aml@leader
+
 perf <- h2o.performance(mod,test_hf)
 
 perf@metrics$pr_auc
 
-perf@metrics$max_criteria_and_metric_scores
-```
-
----
-
-```{r}
 perf@metrics$max_criteria_and_metric_scores
 ```
 
@@ -467,7 +474,7 @@ metrics %>%
 
 ---
 
-# Confusion matrices
+## Confusion matrices
 
 ```{r}
 h2o.confusionMatrix(perf,metrics = "f2")
@@ -498,6 +505,8 @@ plot_input <- plotting_scope(prepared_input = scores_and_ntiles)
 
 ### Cumulative gains
 
+*"When we apply the model and select the best X ntiles, what % of the actual target class observations can we expect to target?"*
+
 ```{r fig.height = 5}
 plot_cumgains(data = plot_input)
 ```
@@ -506,6 +515,8 @@ plot_cumgains(data = plot_input)
 
 ### Cumulative lift
 
+*"When we apply the model and select the best X ntiles, how many times better is that than using no model at all?"*
+
 ```{r fig.height = 5}
 plot_cumlift(data = plot_input)
 ```
@@ -513,6 +524,9 @@ plot_cumlift(data = plot_input)
 ---
 
 ### Cumulative response
+
+*"When we apply the model and select ntile X, what is the expected % of target class observations in that ntile?"*
+
 ```{r fig.height = 5}
 plot_cumresponse(data = plot_input)
 ```
@@ -555,4 +569,41 @@ explanation <- lime::explain(x = test_data[1:5, ],
 ```{r}
 lime::plot_features(explanation)
 ```
+
+---
+
+class: inverse, center, middle
+
+# What we didn't cover
+
+---
+
+### Comparing models
+
+Including sorting models based on e.g. AUCPR (see "compare_models.R" script")
+
+--
+### Decision tree
+
+See the "EVALUATE.R" for how to plot the model as a decision tree
+
+--
+### Predicting on new data
+
+Including changing model predictions according to other thresholds for optimizing e.g. the F2 score (see the "PREDICT.R") script
+
+--
+### Clustering churners
+
+Based on model explanations for churn, we can cluster customers according to the variable weights obtained with LIME.
+
+---
+
+class: inverse, center, middle
+
+# Thank You!
+
+### hr.pchristensen@gmail.com
+
+### <https://github.com/PeerChristensen/Churn_autoML>
 
