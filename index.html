@@ -66,41 +66,6 @@ round(prop.table(table(df$Churned30)),3)*100
 
 ---
 
-
-```r
-names(df[1:50])
-```
-
-```
-##  [1] "Churned30"                "SubscriptionCount"       
-##  [3] "DaysSinceLatestSignup"    "SubscriptionSignupSeason"
-##  [5] "DaysSinceLatestOrder"     "TotalOrderCount"         
-##  [7] "TotalNetRevenue"          "DaysSinceFirstOrder"     
-##  [9] "PlusOrderCount"           "PlusNetRevenue"          
-## [11] "PlusQuantityBought"       "PersonalSavingsTotal"    
-## [13] "PersonalSavings30days"    "PlusDigitalShare"        
-## [15] "F001"                     "F002"                    
-## [17] "F003"                     "F004"                    
-## [19] "F005"                     "F006"                    
-## [21] "F007"                     "F008"                    
-## [23] "F009"                     "F010"                    
-## [25] "F011"                     "F012"                    
-## [27] "F013"                     "F014"                    
-## [29] "F015"                     "F016"                    
-## [31] "F017"                     "F018"                    
-## [33] "F019"                     "F020"                    
-## [35] "F021"                     "F022"                    
-## [37] "F023"                     "S001"                    
-## [39] "S002"                     "S003"                    
-## [41] "S004"                     "S005"                    
-## [43] "S006"                     "S007"                    
-## [45] "S008"                     "StreamingCost"           
-## [47] "PremiumMembershipSource"  "AppLogins"               
-## [49] "RFM_cluster"              "DateStatus"
-```
-
----
-
 ## Correlation funnel
 
 
@@ -109,7 +74,7 @@ library(tidyverse)
 library(correlationfunnel)
 
 df_binned &lt;- df %&gt;%
-  select(-DateStatus) %&gt;%
+ select(-v50) %&gt;% # date variable
   binarize(n_bins = 5, thresh_infreq = 0.01, name_infreq = "OTHER", one_hot = TRUE)
 
 df_churn_corr &lt;- df_binned %&gt;%
@@ -118,15 +83,11 @@ df_churn_corr &lt;- df_binned %&gt;%
 
 ---
 
+### The top of the funnel
 
-```r
-df_churn_corr %&gt;%
-  plot_correlation_funnel()
-```
 
-![](index_files/figure-html/unnamed-chunk-6-1.png)&lt;!-- --&gt;
+Note that the variables have been anonymized.
 
----
 
 
 ```r
@@ -136,7 +97,7 @@ df_churn_corr %&gt;%
   plot_correlation_funnel()
 ```
 
-![](index_files/figure-html/unnamed-chunk-7-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-5-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -187,12 +148,14 @@ p1 &lt;- df %&gt;%
 
 ---
 
+These are highly skewed and will need to be dealt with when preprocessing the data.
+
 
 ```r
 p1
 ```
 
-![](index_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-8-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -219,18 +182,22 @@ p2 &lt;- df %&gt;%
 
 ---
 
+We see that v49 is highly imbalanced and nearly constant.
+
 
 ```r
 p2
 ```
 
-![](index_files/figure-html/unnamed-chunk-12-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-10-1.png)&lt;!-- --&gt;
 
 ---
 
 class: inverse, center, middle
 
 # Feature engineering
+
+### Examples (not run)
 
 ---
 
@@ -261,7 +228,7 @@ df &lt;- df %&gt;% select(-DateStatus)
 
 ---
 
-## Ratio of literary preferences
+## Ratios
 
 
 ```r
@@ -387,18 +354,18 @@ h2o.init(nthreads = -1)
 ## H2O is not running yet, starting it now...
 ## 
 ## Note:  In case of errors look at the following log files:
-##     C:\Users\pech\AppData\Local\Temp\RtmpwlcGQb/h2o_pech_started_from_r.out
-##     C:\Users\pech\AppData\Local\Temp\RtmpwlcGQb/h2o_pech_started_from_r.err
+##     C:\Users\pech\AppData\Local\Temp\RtmpYRyrYS/h2o_pech_started_from_r.out
+##     C:\Users\pech\AppData\Local\Temp\RtmpYRyrYS/h2o_pech_started_from_r.err
 ## 
 ## 
 ## Starting H2O JVM and connecting:  Connection successful!
 ## 
 ## R is connected to the H2O cluster: 
-##     H2O cluster uptime:         3 seconds 621 milliseconds 
+##     H2O cluster uptime:         3 seconds 28 milliseconds 
 ##     H2O cluster timezone:       Europe/Paris 
 ##     H2O data parsing timezone:  UTC 
 ##     H2O cluster version:        3.26.0.2 
-##     H2O cluster version age:    4 months and 8 days !!! 
+##     H2O cluster version age:    4 months and 13 days !!! 
 ##     H2O cluster name:           H2O_started_from_R_pech_cda172 
 ##     H2O cluster total nodes:    1 
 ##     H2O cluster total memory:   1.75 GB 
@@ -463,26 +430,20 @@ aml@leaderboard %&gt;%
 ```
 
 ```
-## # A tibble: 17 x 2
+## # A tibble: 11 x 2
 ##    model_id                                              auc
 ##    &lt;chr&gt;                                               &lt;dbl&gt;
-##  1 GBM_2_AutoML_20191205_150015                        0.956
-##  2 GBM_grid_1_AutoML_20191205_150015_model_1           0.956
-##  3 GBM_3_AutoML_20191205_150015                        0.955
-##  4 GBM_1_AutoML_20191205_150015                        0.955
-##  5 GBM_5_AutoML_20191205_150015                        0.955
-##  6 GBM_grid_1_AutoML_20191205_150015_model_2           0.955
-##  7 GBM_4_AutoML_20191205_150015                        0.953
-##  8 StackedEnsemble_AllModels_AutoML_20191205_150015    0.950
-##  9 StackedEnsemble_BestOfFamily_AutoML_20191205_150015 0.946
-## 10 DRF_1_AutoML_20191205_150015                        0.943
-## 11 XRT_1_AutoML_20191205_150015                        0.941
-## 12 GBM_grid_1_AutoML_20191205_150015_model_3           0.936
-## 13 DeepLearning_grid_1_AutoML_20191205_150015_model_3  0.929
-## 14 DeepLearning_1_AutoML_20191205_150015               0.928
-## 15 DeepLearning_grid_1_AutoML_20191205_150015_model_2  0.922
-## 16 DeepLearning_grid_1_AutoML_20191205_150015_model_1  0.918
-## 17 GLM_grid_1_AutoML_20191205_150015_model_1           0.910
+##  1 GBM_2_AutoML_20191210_105729                        0.954
+##  2 GBM_5_AutoML_20191210_105729                        0.953
+##  3 GBM_1_AutoML_20191210_105729                        0.952
+##  4 GBM_3_AutoML_20191210_105729                        0.952
+##  5 GBM_4_AutoML_20191210_105729                        0.949
+##  6 StackedEnsemble_AllModels_AutoML_20191210_105729    0.945
+##  7 StackedEnsemble_BestOfFamily_AutoML_20191210_105729 0.942
+##  8 XRT_1_AutoML_20191210_105729                        0.934
+##  9 DRF_1_AutoML_20191210_105729                        0.932
+## 10 GLM_grid_1_AutoML_20191210_105729_model_1           0.909
+## 11 DeepLearning_1_AutoML_20191210_105729               0.902
 ```
 
 ---
@@ -556,7 +517,7 @@ perf@metrics$pr_auc
 ```
 
 ```
-## [1] 0.7962993
+## [1] 0.8020392
 ```
 
 ```r
@@ -566,16 +527,16 @@ perf@metrics$max_criteria_and_metric_scores
 ```
 ## Maximum Metrics: Maximum metrics at their respective thresholds
 ##                         metric threshold    value idx
-## 1                       max f1  0.157420 0.745958 231
-## 2                       max f2  0.085874 0.738562 263
-## 3                 max f0point5  0.614708 0.829164 121
-## 4                 max accuracy  0.342846 0.974754 174
-## 5                max precision  0.973363 1.000000   0
-## 6                   max recall  0.000515 1.000000 394
-## 7              max specificity  0.973363 1.000000   0
-## 8             max absolute_mcc  0.212284 0.735636 211
-## 9   max min_per_class_accuracy  0.010328 0.883516 347
-## 10 max mean_per_class_accuracy  0.012166 0.886746 342
+## 1                       max f1  0.249444 0.749373 201
+## 2                       max f2  0.048871 0.756036 294
+## 3                 max f0point5  0.480033 0.838323 144
+## 4                 max accuracy  0.249444 0.975725 201
+## 5                max precision  0.956348 1.000000   0
+## 6                   max recall  0.000538 1.000000 395
+## 7              max specificity  0.956348 1.000000   0
+## 8             max absolute_mcc  0.249444 0.745014 201
+## 9   max min_per_class_accuracy  0.008660 0.877312 355
+## 10 max mean_per_class_accuracy  0.018602 0.887000 333
 ```
 
 ---
@@ -595,7 +556,7 @@ metrics %&gt;%
   theme_minimal()
 ```
 
-![](index_files/figure-html/unnamed-chunk-28-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-26-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -609,7 +570,7 @@ metrics %&gt;%
   theme_minimal()
 ```
 
-![](index_files/figure-html/unnamed-chunk-29-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-27-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -621,11 +582,11 @@ h2o.confusionMatrix(perf,metrics = "f2")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.0858743791131741:
+## Confusion Matrix (vertical: actual; across: predicted)  for max f2 @ threshold = 0.0488706939629655:
 ##           0   1    Error       Rate
-## 0      7648 136 0.017472  =136/7784
-## 1       116 339 0.254945   =116/455
-## Totals 7764 475 0.030586  =252/8239
+## 0      7600 184 0.023638  =184/7784
+## 1        98 357 0.215385    =98/455
+## Totals 7698 541 0.034227  =282/8239
 ```
 
 ```r
@@ -633,11 +594,11 @@ h2o.confusionMatrix(perf,metrics = "accuracy")
 ```
 
 ```
-## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.342845905998153:
+## Confusion Matrix (vertical: actual; across: predicted)  for max accuracy @ threshold = 0.249444440850815:
 ##           0   1    Error       Rate
-## 0      7751  33 0.004239   =33/7784
-## 1       175 280 0.384615   =175/455
-## Totals 7926 313 0.025246  =208/8239
+## 0      7740  44 0.005653   =44/7784
+## 1       156 299 0.342857   =156/455
+## Totals 7896 343 0.024275  =200/8239
 ```
 
 ---
@@ -671,7 +632,7 @@ plot_input &lt;- plotting_scope(prepared_input = scores_and_ntiles)
 plot_cumgains(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-30-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -684,7 +645,7 @@ plot_cumgains(data = plot_input)
 plot_cumlift(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-31-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -697,7 +658,7 @@ plot_cumlift(data = plot_input)
 plot_cumresponse(data = plot_input)
 ```
 
-![](index_files/figure-html/unnamed-chunk-34-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-32-1.png)&lt;!-- --&gt;
 
 ---
 
@@ -714,7 +675,7 @@ class: inverse, center, middle
 h2o.varimp_plot(mod)
 ```
 
-![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-33-1.png)&lt;!-- --&gt;
 
 (See the "EVALUATE.R script for how to plot a decision tree from the model)
 
@@ -743,7 +704,7 @@ explanation &lt;- lime::explain(x = test_data[1:5, ],
 lime::plot_features(explanation)
 ```
 
-![](index_files/figure-html/unnamed-chunk-37-1.png)&lt;!-- --&gt;
+![](index_files/figure-html/unnamed-chunk-35-1.png)&lt;!-- --&gt;
 
 ---
 

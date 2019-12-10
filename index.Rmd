@@ -40,6 +40,9 @@ df <- read_csv("new_churn_training.csv") %>%
 Customer_Key <- df$Customer_Key
 
 df <- df %>% select(-Customer_Key)
+
+names(df) <- paste0("v",1:ncol(df))
+names(df)[1] <- "Churned30"
 ```
 
 ### Rows and columns
@@ -60,12 +63,6 @@ round(prop.table(table(df$Churned30)),3)*100
 
 ---
 
-```{r}
-names(df[1:50])
-```
-
----
-
 ## Correlation funnel
 
 ```{r}
@@ -73,24 +70,22 @@ library(tidyverse)
 library(correlationfunnel)
 
 df_binned <- df %>%
-  select(-DateStatus) %>%
+ select(-v50) %>% # date variable
   binarize(n_bins = 5, thresh_infreq = 0.01, name_infreq = "OTHER", one_hot = TRUE)
 
 df_churn_corr <- df_binned %>%
   correlate(Churned30__1)
-
 ```
 
 ---
 
-```{r}
-df_churn_corr %>%
-  plot_correlation_funnel()
-```
+### The top of the funnel
 
----
 
-```{r}
+Note that the variables have been anonymized.
+
+
+```{r fig.height = 4}
 df_churn_corr %>%
   arrange(desc(correlation)) %>%
   top_n(15) %>%
@@ -144,6 +139,8 @@ p1 <- df %>%
 
 ---
 
+These are highly skewed and will need to be dealt with when preprocessing the data.
+
 ```{r}
 p1
 ```
@@ -172,6 +169,8 @@ p2 <- df %>%
 
 ---
 
+We see that v49 is highly imbalanced and nearly constant.
+
 ```{r}
 p2
 ```
@@ -182,17 +181,19 @@ class: inverse, center, middle
 
 # Feature engineering
 
+### Examples (not run)
+
 ---
 
 ### Calculate order size
 
-```{r}
+```{r eval = F}
 df$AverageOrderSize <- df$TotalNetRevenue / df$TotalOrderCount
 ```
 
 ### Signup month
 
-```{r}
+```{r eval = F}
 library(lubridate)
 
 # Get the current date
@@ -209,9 +210,9 @@ df <- df %>% select(-DateStatus)
 
 ---
 
-## Ratio of literary preferences
+## Ratios
 
-```{r}
+```{r eval = F}
 f_lit_mean <- df %>% 
   select(starts_with("F0")) %>%
   transmute(m = rowMeans(.)) %>%
@@ -229,7 +230,7 @@ f_ratio <- f_lit_mean / (s_lit_mean +f_lit_mean)
 
 ## Principal components
 
-```{r}
+```{r eval = F}
 s_lit_vars <- df %>% 
   select(starts_with("S0")) %>%
            names()
@@ -351,7 +352,7 @@ aml <- h2o.automl(x = features,
                   y = response,
                   training_frame   = train_hf,
                   balance_classes  = TRUE,
-                  max_runtime_secs = 60*15,
+                  max_runtime_secs = 60*10,
                   nfolds = 10)
 
 ```
@@ -449,7 +450,7 @@ perf@metrics$max_criteria_and_metric_scores
 
 ### H2O Metrics
 
-```{r fig.width = 9}
+```{r fig.width = 9, fig.height=4}
 metrics <- as.data.frame(h2o.metric(perf))
 
 metrics %>%
@@ -566,7 +567,7 @@ explanation <- lime::explain(x = test_data[1:5, ],
 
 ---
 
-```{r}
+```{r fig.width= 10}
 lime::plot_features(explanation)
 ```
 
